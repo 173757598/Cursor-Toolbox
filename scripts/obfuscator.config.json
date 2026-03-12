@@ -1,0 +1,21 @@
+{
+  "compact": true,
+  "target": "browser-no-eval",
+  "renameGlobals": false,
+  "controlFlowFlattening": false,
+  "deadCodeInjection": false,
+  "selfDefending": false,
+  "simplify": false,
+  "numbersToExpressions": false,
+  "splitStrings": false,
+  "stringArray": true,
+  "stringArrayCallsTransform": false,
+  "stringArrayIndexShift": false,
+  "stringArrayRotate": false,
+  "stringArrayShuffle": false,
+  "stringArrayWrappersCount": 1,
+  "stringArrayWrappersChainedCalls": false,
+  "transformObjectKeys": false,
+  "stringArrayThreshold": 0.45,
+  "identifierNamesGenerator": "hexadecimal"
+}

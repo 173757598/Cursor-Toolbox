@@ -1,0 +1,68 @@
+{
+  "manifest_version": 3,
+  "name": "Cursor Toolbox",
+  "version": "1.1.2",
+  "description": "Cursor web AI chat extension",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_popup": "src/popup/popup.html"
+  },
+  "background": {
+    "service_worker": "web_mcp_cli/background.bundle.js",
+    "type": "module"
+  },
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://cursor.com/*"
+      ],
+      "js": [
+        "src/content/content-core.js",
+        "src/content/content-session-shell.js",
+        "src/content/bridge-fab/bridge-core-mcp.js",
+        "src/content/bridge-fab/bridge-mcp-runner.js",
+        "src/content/bridge-fab/bridge-fab-recovery-layout.js",
+        "src/content/bridge-fab/bridge-mcp-panel.js",
+        "src/content/bridge-fab/bridge-ui-guards.js",
+        "src/content/layout/layout-core.js",
+        "src/content/layout/layout-reconcile-observer.js",
+        "src/content/layout/layout-thinking-style.js",
+        "src/content/content-runtime.js"
+      ],
+      "run_at": "document_idle",
+      "css": [
+        "src/content/styles/layout-global-base.css",
+        "src/content/styles/layout-global-shell-history.css",
+        "src/content/styles/layout-global-chat-responsive.css"
+      ]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/injected/page-hook.js"
+      ],
+      "matches": [
+        "https://cursor.com/*"
+      ]
+    }
+  ]
+}

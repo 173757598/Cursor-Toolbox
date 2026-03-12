@@ -1,0 +1,48 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: web_mcp_cli/pnpm-lock.yaml
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Use pnpm
+        run: corepack prepare pnpm@10.30.3 --activate
+
+      - name: Build extension
+        run: powershell -ExecutionPolicy Bypass -File .\scripts\build-extension.ps1
+
+      - name: Pack release
+        shell: pwsh
+        run: |
+          $tag = '${{ github.ref_name }}'
+          $zipName = "cursor-toolbox-$tag.zip"
+          if (Test-Path $zipName) { Remove-Item $zipName -Force }
+          Compress-Archive -Path release\* -DestinationPath $zipName
+          "ZIP_NAME=$zipName" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ env.ZIP_NAME }}

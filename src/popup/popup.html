@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cursor Toolbox</title>
+  <style>
+    :root {
+      /* 浅色模式默认值 */
+      --bg-color: #ffffff;
+      --text-color: #1a1a1a;
+      --border-color: #e0e0e0;
+      --secondary-text: #666666;
+      --toggle-off-bg: #cccccc;
+      --toggle-on-bg: #1a1a1a;
+      --toggle-off-thumb: #ffffff;
+      --toggle-on-thumb: #ffffff;
+      --status-enabled: #1a1a1a;
+      --status-disabled: #999999;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #1a1a1a;
+        --text-color: #ffffff;
+        --border-color: #333333;
+        --secondary-text: #999999;
+        --toggle-off-bg: #555555;
+        --toggle-on-bg: #ffffff;
+        --toggle-off-thumb: #1a1a1a;
+        --toggle-on-thumb: #1a1a1a;
+        --status-enabled: #ffffff;
+        --status-disabled: #666666;
+      }
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 280px;
+      height: 150px;
+      background: var(--bg-color);
+      color: var(--text-color);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* 顶部标题栏 */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .header-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-color);
+    }
+
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--status-disabled);
+      transition: background 0.2s ease;
+    }
+
+    .status-indicator.enabled {
+      background: var(--status-enabled);
+    }
+
+    /* 主体内容 */
+    .body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 10px;
+      padding: 10px 14px;
+    }
+
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .setting-label {
+      font-size: 12px;
+      color: var(--text-color);
+      user-select: none;
+    }
+
+    /* Toggle Switch */
+    .toggle-input {
+      display: none;
+    }
+
+    .toggle-label {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      cursor: pointer;
+    }
+
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      border-radius: 12px;
+      background: var(--toggle-off-bg);
+      transition: background 0.2s ease;
+    }
+
+    .toggle-thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--toggle-off-thumb);
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .toggle-input:checked + .toggle-label .toggle-track {
+      background: var(--toggle-on-bg);
+    }
+
+    .toggle-input:checked + .toggle-label .toggle-thumb {
+      transform: translateX(20px);
+      background: var(--toggle-on-thumb);
+    }
+
+    /* 底部说明文字 */
+    .footer {
+      padding: 8px 14px;
+      border-top: 1px solid var(--border-color);
+      text-align: center;
+    }
+
+    .footer-text {
+      font-size: 11px;
+      color: var(--secondary-text);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-title">Cursor Toolbox</div>
+    <div class="status-indicator" id="status-indicator"></div>
+  </div>
+
+  <div class="body">
+    <div class="setting-row">
+      <span class="setting-label">插件总开关</span>
+      <div>
+        <input type="checkbox" class="toggle-input" id="plugin-toggle" checked>
+        <label class="toggle-label" for="plugin-toggle">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <span class="footer-text">控制插件功能启用/关闭</span>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
