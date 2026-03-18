@@ -4,7 +4,7 @@
 
 let isPluginEnabled = true;
 let isThinkingInjectionEnabled = false;
-let isAutoContinueFromCutoffEnabled = false;
+let isAutoContinueFromCutoffEnabled = true;
 let globalPromptInstruction = '';
 let initCalled = false;
 
@@ -36,7 +36,6 @@ const STARTUP_RECOVERY_INTERVAL_MS = 500;
 const STARTUP_RECOVERY_MAX_ATTEMPTS = 40;
 const SESSION_STORAGE_KEY = 'tm_local_chat_sessions_v1';
 const THINKING_INJECTION_STORAGE_KEY = 'tm_thinking_injection_enabled_v1';
-const AUTO_CONTINUE_FROM_CUTOFF_STORAGE_KEY = 'tm_auto_continue_from_cutoff_enabled_v1';
 const GLOBAL_PROMPT_INSTRUCTION_STORAGE_KEY = 'tm_global_prompt_instruction_v1';
 const MCP_CONFIG_STORAGE_KEY = 'tm_mcp_config_v1';
 const MCP_ENABLED_TOOLS_STORAGE_KEY = 'tm_mcp_enabled_tools_v1';

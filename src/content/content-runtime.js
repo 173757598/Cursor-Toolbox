@@ -945,15 +945,11 @@ chrome.storage.local.get({
 }, (result) => {
   isPluginEnabled = result.enabled !== false;
   const storedThinkingToggle = result[THINKING_INJECTION_STORAGE_KEY];
-  const storedAutoContinue = result[AUTO_CONTINUE_FROM_CUTOFF_STORAGE_KEY];
   isThinkingInjectionEnabled = storedThinkingToggle === true;
-  isAutoContinueFromCutoffEnabled = storedAutoContinue !== false;
+  isAutoContinueFromCutoffEnabled = true;
   globalPromptInstruction = normalizeGlobalPromptInstructionText(result[GLOBAL_PROMPT_INSTRUCTION_STORAGE_KEY]);
   if (storedThinkingToggle === undefined) {
     chrome.storage.local.set({ [THINKING_INJECTION_STORAGE_KEY]: false });
-  }
-  if (storedAutoContinue === undefined) {
-    chrome.storage.local.set({ [AUTO_CONTINUE_FROM_CUTOFF_STORAGE_KEY]: true });
   }
   if (result[GLOBAL_PROMPT_INSTRUCTION_STORAGE_KEY] === undefined) {
     chrome.storage.local.set({ [GLOBAL_PROMPT_INSTRUCTION_STORAGE_KEY]: '' });

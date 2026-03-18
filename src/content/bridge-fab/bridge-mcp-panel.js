@@ -2,13 +2,71 @@
 
 'use strict';
 
+let mcpPanelDismissListenersBound = false;
+
 function getMcpPanelElement() {
   return document.getElementById('tm-mcp-panel');
 }
 
+function getMcpPanelBackdropElement() {
+  return document.getElementById('tm-mcp-panel-backdrop');
+}
+
+function bindMcpPanelDismissListeners() {
+  if (mcpPanelDismissListenersBound) return;
+  mcpPanelDismissListenersBound = true;
+  document.addEventListener('keydown', handleMcpPanelDocumentKeydown, true);
+}
+
+function unbindMcpPanelDismissListeners() {
+  if (!mcpPanelDismissListenersBound) return;
+  mcpPanelDismissListenersBound = false;
+  document.removeEventListener('keydown', handleMcpPanelDocumentKeydown, true);
+}
+
+function handleMcpPanelDocumentKeydown(event) {
+  if (!state.mcpPanelOpen) return;
+  if (event.key !== 'Escape') return;
+  event.preventDefault();
+  closeMcpPanel();
+}
+
 function removeMcpPanel() {
   const panel = getMcpPanelElement();
-  if (panel) panel.remove();
+  if (panel instanceof HTMLElement) {
+    cancelMcpJsonAutoFormat(panel);
+    panel.remove();
+  }
+  const backdrop = getMcpPanelBackdropElement();
+  if (backdrop) backdrop.remove();
+  unbindMcpPanelDismissListeners();
+}
+
+function closeMcpPanel() {
+  state.mcpPanelOpen = false;
+  removeMcpPanel();
+  updateMcpButtonState();
+}
+
+function ensureMcpPanelBackdrop() {
+  const existing = getMcpPanelBackdropElement();
+  if (existing) return existing;
+
+  const backdrop = document.createElement('div');
+  backdrop.id = 'tm-mcp-panel-backdrop';
+  backdrop.setAttribute('aria-hidden', 'true');
+  backdrop.style.cssText = [
+    'position:fixed',
+    'inset:0',
+    'z-index:2147482999',
+    'background:rgba(15,23,42,.04)',
+    'backdrop-filter:blur(1px)'
+  ].join(';');
+  backdrop.addEventListener('click', () => {
+    closeMcpPanel();
+  });
+  document.body.appendChild(backdrop);
+  return backdrop;
 }
 
 function setMcpPanelStatus(message, isError = false) {
@@ -573,9 +631,14 @@ function ensureMcpPanel() {
   const existing = getMcpPanelElement();
   if (existing) return existing;
   bindMcpPanelViewportListeners();
+  bindMcpPanelDismissListeners();
+  ensureMcpPanelBackdrop();
 
   const panel = document.createElement('div');
   panel.id = 'tm-mcp-panel';
+  panel.setAttribute('role', 'dialog');
+  panel.setAttribute('aria-modal', 'true');
+  panel.setAttribute('aria-labelledby', 'tm-mcp-title');
   panel.style.cssText = [
     'position:fixed',
     'left:16px',
@@ -1117,7 +1180,7 @@ function ensureMcpPanel() {
       }
     </style>
     <div class="tm-mcp-header" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.1);">
-      <div class="tm-mcp-title" style="font-size:13px;font-weight:600;color:#111;">MCP 工具配置</div>
+      <div id="tm-mcp-title" class="tm-mcp-title" style="font-size:13px;font-weight:600;color:#111;">MCP 工具配置</div>
       <button id="tm-mcp-close" class="tm-mcp-close" type="button" style="border:none;background:transparent;font-size:18px;line-height:1;cursor:pointer;color:#666;">×</button>
     </div>
     <div class="tm-mcp-body" style="padding:10px 12px;display:flex;flex-direction:column;gap:10px;overflow:auto;">
@@ -1176,9 +1239,7 @@ function ensureMcpPanel() {
     if (!(target instanceof Element)) return;
 
     if (target.id === 'tm-mcp-close') {
-      state.mcpPanelOpen = false;
-      removeMcpPanel();
-      updateMcpButtonState();
+      closeMcpPanel();
       return;
     }
 
@@ -1699,8 +1760,7 @@ async function toggleMcpServerToolsAll(serverId, enableAll) {
 function toggleMcpPanel() {
   state.mcpPanelOpen = !state.mcpPanelOpen;
   if (!state.mcpPanelOpen) {
-    removeMcpPanel();
-    updateMcpButtonState();
+    closeMcpPanel();
     return;
   }
 

@@ -232,17 +232,6 @@ function updateThinkingToggleUi() {
   btn.setAttribute('title', enabled ? '思考模式：已开启' : '思考模式：已关闭');
 }
 
-function updateContinueAutoToggleUi() {
-  const btn = document.getElementById('tm-continue-auto-toggle-btn');
-  if (!(btn instanceof HTMLButtonElement)) return;
-
-  const enabled = isAutoContinueFromCutoffEnabled === true;
-  btn.classList.toggle('is-on', enabled);
-  btn.classList.toggle('is-off', !enabled);
-  btn.setAttribute('aria-checked', enabled ? 'true' : 'false');
-  btn.setAttribute('title', enabled ? '自动续写：已开启' : '自动续写：已关闭');
-}
-
 function hasContinueCutoffAnchorReady() {
   const source = state?.streamContinuation;
   if (!source || typeof source !== 'object') return false;
@@ -573,13 +562,6 @@ function createThinkingToggle() {
         <span class="tm-thinking-toggle-knob"></span>
       </span>
     </button>
-    <button id="tm-continue-cutoff-btn" class="tm-continue-cutoff-btn" type="button" aria-label="从截断处继续输出" title="从上次截断处继续输出">续写</button>
-    <button id="tm-continue-auto-toggle-btn" class="tm-continue-auto-toggle-btn is-off" type="button" role="switch" aria-checked="false" aria-label="自动续写开关">
-      <span class="tm-continue-auto-label">自动续写</span>
-      <span class="tm-continue-auto-switch" aria-hidden="true">
-        <span class="tm-continue-auto-knob"></span>
-      </span>
-    </button>
     <button id="tm-summary-chat-btn" class="tm-summary-chat-btn" type="button" aria-label="压缩总结全部对话" title="压缩总结全部对话（发送总结提示词）">压缩总结</button>
   `.trim();
 
@@ -591,21 +573,6 @@ function createThinkingToggle() {
       setThinkingInjectionEnabled(!isThinkingInjectionEnabled);
     });
   }
-  const continueBtn = host.querySelector('#tm-continue-cutoff-btn');
-  bindQuickSendButton(
-    continueBtn,
-    sendContinueFromCutoffMessage,
-    '[Cursor Toolbox] failed to auto-send continue-from-cutoff message.'
-  );
-  const continueAutoToggleBtn = host.querySelector('#tm-continue-auto-toggle-btn');
-  if (continueAutoToggleBtn) {
-    continueAutoToggleBtn.addEventListener('click', (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      setAutoContinueFromCutoffEnabled(!isAutoContinueFromCutoffEnabled);
-    });
-  }
-
   const summaryBtn = host.querySelector('#tm-summary-chat-btn');
   bindQuickSendButton(
     summaryBtn,
@@ -616,7 +583,6 @@ function createThinkingToggle() {
   applyThinkingTogglePlacement(host, 'inline');
   updateThinkingToggleUi();
   updateContinueCutoffButtonUi();
-  updateContinueAutoToggleUi();
   updateGlobalPromptUi();
   return host;
 }
@@ -640,7 +606,6 @@ function ensureThinkingToggleNearModel() {
 
     updateThinkingToggleUi();
     updateContinueCutoffButtonUi();
-    updateContinueAutoToggleUi();
     updateGlobalPromptUi();
     return true;
   }
@@ -656,7 +621,6 @@ function ensureThinkingToggleNearModel() {
 
   updateThinkingToggleUi();
   updateContinueCutoffButtonUi();
-  updateContinueAutoToggleUi();
   updateGlobalPromptUi();
   return true;
 }

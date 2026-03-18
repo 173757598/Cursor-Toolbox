@@ -16,14 +16,22 @@
 11. **附：**为什么MCP、SKILLS这些概念要老外的ai厂商提出，然后成为ai界的行业标准，任重而道远啊，加油啊。
 
 ## 使用教程
-使用教程地址：https://blog.aiguicai.com/archives/cursor_toolbox    
-【我博客地址被某些人疯狂举报，如果被杀毒软件拦截，放行即可】
+> 使用教程地址：https://blog.aiguicai.com/archives/cursor_toolbox    
+> 使用视频地址：https://www.bilibili.com/video/BV1mpcozoEXL/?share_source=copy_web&vd_source=23971f77ed7085fd5791077dbce9df89
+> 本地MCP网关工具地址：https://github.com/510myRday/MCP-Gateway
 
 ## 明确声明
 **所以软件都是绿色无毒，免费无限使用，仅供交流学习，切勿违法使用，否则后果自负！！**
 
+## 开发讨论
+我正在开发通用版本的网页聊天接入MCP和skills的插件，有好点子或者好的聊天界面渠道的朋友可以一起讨论开发。
+当然，也欢迎志同道合的朋友加入，以前聊天扯皮。
+
+> QQ群：1090461840   
+> 飞机群：https://t.me/+vq8WByYtPoQ1MjA1   
+
 ## 功能
-- 在 cursor.com 注入辅助 UI 与面板
+- 在 cursor.com 帮助页，注入辅助 UI 与面板
 - 提供 MCP 工具发现/启用/调用的前端桥接
 - （大家可以提供新思路，来完善功能）
 
@@ -46,13 +54,6 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build-extension.ps1
 ## 隐私与数据
 - 当前实现未包含主动上报/埋点逻辑
 - MCP 请求将直连你配置的服务器，配置存于 `chrome.storage.local`
-
-## 开发讨论
-我正在开发通用版本的网页聊天接入MCP和skills的插件，有好点子或者好的聊天界面渠道的朋友可以一起讨论开发。
-当然，也欢迎志同道合的朋友加入，以前聊天扯皮。
-
-> QQ群：1090461840   
-> 飞机群：https://t.me/+vq8WByYtPoQ1MjA1   
 
 感谢大家的支持！！！
 

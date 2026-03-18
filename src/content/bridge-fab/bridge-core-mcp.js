@@ -433,23 +433,6 @@ function setThinkingInjectionEnabled(nextEnabled, { persist = true, sync = true 
   }
 }
 
-function persistAutoContinueFromCutoffEnabled() {
-  chrome.storage.local.set({ [AUTO_CONTINUE_FROM_CUTOFF_STORAGE_KEY]: isAutoContinueFromCutoffEnabled });
-}
-
-function setAutoContinueFromCutoffEnabled(nextEnabled, { persist = true } = {}) {
-  const normalized = nextEnabled === true;
-  const changed = isAutoContinueFromCutoffEnabled !== normalized;
-  isAutoContinueFromCutoffEnabled = normalized;
-
-  if (typeof updateContinueAutoToggleUi === 'function') {
-    updateContinueAutoToggleUi();
-  }
-  if (changed && persist) {
-    persistAutoContinueFromCutoffEnabled();
-  }
-}
-
 function persistGlobalPromptInstruction() {
   chrome.storage.local.set({ [GLOBAL_PROMPT_INSTRUCTION_STORAGE_KEY]: globalPromptInstruction });
 }
