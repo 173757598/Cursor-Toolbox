@@ -622,6 +622,26 @@ Use the SAME language as the user's latest message.
     return '';
   }
 
+  function extractErrorTextFromSseEvent(eventPayload) {
+    if (!eventPayload || typeof eventPayload !== 'object') return '';
+
+    const typeText = typeof eventPayload.type === 'string'
+      ? eventPayload.type.toLowerCase()
+      : '';
+    if (typeText !== 'error' && !typeText.includes('error')) return '';
+
+    if (typeof eventPayload.errorText === 'string' && eventPayload.errorText.trim()) {
+      return eventPayload.errorText.trim();
+    }
+    if (typeof eventPayload.error === 'string' && eventPayload.error.trim()) {
+      return eventPayload.error.trim();
+    }
+    if (typeof eventPayload.message === 'string' && eventPayload.message.trim()) {
+      return eventPayload.message.trim();
+    }
+    return 'sse_error_event';
+  }
+
   function parseSsePayload(rawSseText) {
     const { blocks } = consumeSseBlocks(rawSseText, true);
     const events = [];
@@ -1130,6 +1150,7 @@ Use the SAME language as the user's latest message.
     let cutByToolCode = false;
     let cutByToolFormatRetry = false;
     let doneEventSeen = false;
+    let streamErrorText = '';
     const emitRewriteLogOnce = () => {
       if (rewriteState.logSent || rewriteState.replacedToolEventCount <= 0) return;
       rewriteState.logSent = true;
@@ -1152,6 +1173,10 @@ Use the SAME language as the user's latest message.
       const typeText = typeof parsed.type === 'string' ? parsed.type.toLowerCase() : '';
       if (typeText === 'done') {
         doneEventSeen = true;
+      }
+      const eventErrorText = extractErrorTextFromSseEvent(parsed);
+      if (eventErrorText && !streamErrorText) {
+        streamErrorText = eventErrorText;
       }
       if (events.length < MAX_STREAM_CAPTURE_EVENTS) {
         events.push(parsed);
@@ -1216,6 +1241,7 @@ Use the SAME language as the user's latest message.
     const emitStreamDone = ({ streamed, aborted = false, error = '', cancelReason = '' } = {}) => {
       if (streamDoneEmitted) return;
       streamDoneEmitted = true;
+      const finalError = String(error || streamErrorText || '').trim();
 
       const normalizedAssistantText = isContinuationRequest
         ? sanitizeContinuationStreamText(assistantText)
@@ -1231,7 +1257,7 @@ Use the SAME language as the user's latest message.
       const likelyUpstreamCutoff = streamed === true
         && !doneEventSeen
         && !aborted
-        && !error
+        && !finalError
         && !cancelReason
         && !cutByToolCode
         && !cutByToolFormatRetry;
@@ -1252,7 +1278,9 @@ Use the SAME language as the user's latest message.
         sseEvents: events,
         assistantText: normalizedAssistantText,
         sseEventsTruncated: eventsTruncated,
-        receivedDoneEvent: doneEventSeen
+        receivedDoneEvent: doneEventSeen,
+        receivedErrorEvent: Boolean(streamErrorText),
+        isContinuationRequest
       };
       if (isContinuationRequest && normalizedAggregateAssistantText) {
         streamDonePayload.aggregateAssistantText = normalizedAggregateAssistantText;
@@ -1260,7 +1288,7 @@ Use the SAME language as the user's latest message.
       if (cutoffTailText) streamDonePayload.cutoffTailText = cutoffTailText;
       if (likelyUpstreamCutoff) streamDonePayload.likelyUpstreamCutoff = true;
       if (aborted) streamDonePayload.aborted = true;
-      if (error) streamDonePayload.error = error;
+      if (finalError) streamDonePayload.error = finalError;
       if (cancelReason) streamDonePayload.cancelReason = cancelReason;
       if (cutByToolCode) streamDonePayload.cutByToolCode = true;
       if (cutByToolFormatRetry) streamDonePayload.cutByToolFormatRetry = true;
@@ -1271,7 +1299,7 @@ Use the SAME language as the user's latest message.
           || cutByToolCode
           || cutByToolFormatRetry
           || aborted
-          || Boolean(error)
+          || Boolean(finalError)
           || Boolean(cancelReason);
         if (shouldResetAggregate) {
           clearContinuationAggregate(sessionKey);

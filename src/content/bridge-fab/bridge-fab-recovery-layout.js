@@ -236,6 +236,7 @@ function hasContinueCutoffAnchorReady() {
   const source = state?.streamContinuation;
   if (!source || typeof source !== 'object') return false;
   if (source.active !== true) return false;
+  if (source.dispatching === true) return false;
   const token = toSafeString(source.anchorToken);
   const tail = toSafeString(source.tailText);
   return Boolean(token && tail);
@@ -246,8 +247,11 @@ function updateContinueCutoffButtonUi() {
   if (!(btn instanceof HTMLButtonElement)) return;
 
   const streaming = state?.streaming === true;
-  const ready = hasContinueCutoffAnchorReady() && !streaming;
-  const statusText = ready ? '可续写' : (streaming ? '回复中' : '无断点');
+  const dispatching = state?.streamContinuation?.dispatching === true;
+  const ready = hasContinueCutoffAnchorReady() && !streaming && !dispatching;
+  const statusText = ready
+    ? '可续写'
+    : (streaming ? '回复中' : (dispatching ? '发送中' : '无断点'));
   btn.classList.toggle('is-ready', ready);
   btn.classList.toggle('is-empty', !ready);
   btn.disabled = !ready;
@@ -255,24 +259,27 @@ function updateContinueCutoffButtonUi() {
   btn.textContent = `续写(${statusText})`;
   btn.title = ready
     ? '检测到上次输出断点：点击可按锚点协议续写'
-    : (streaming ? '正在等待本轮回复，续写按钮暂不可用' : '当前没有可用断点锚点');
+    : (streaming
+      ? '正在等待本轮回复，续写按钮暂不可用'
+      : (dispatching ? '续写消息正在派发，等待请求开始' : '当前没有可用断点锚点'));
   btn.setAttribute('aria-label', `从截断处继续输出，状态：${statusText}`);
 }
 
 async function sendContinueFromCutoffMessage() {
   if (!hasContinueCutoffAnchorReady()) return false;
   if (state?.streaming === true) return false;
+  const continuation = state?.streamContinuation;
+  if (!continuation || typeof continuation !== 'object') return false;
+  continuation.dispatching = true;
+  continuation.updatedAt = Date.now();
+  if (typeof updateContinueCutoffButtonUi === 'function') {
+    updateContinueCutoffButtonUi();
+  }
   const message = resolveContinueFromCutoffMessage();
   const sent = await sendQuickComposerMessage(message);
-  if (sent && typeof resetStreamContinuationState === 'function') {
-    resetStreamContinuationState({ preserveToolCallState: true });
-  } else if (sent) {
-    const continuation = state?.streamContinuation;
-    if (continuation && typeof continuation === 'object') {
-      continuation.active = false;
-      continuation.anchorToken = '';
-      continuation.tailText = '';
-    }
+  if (!sent) {
+    continuation.dispatching = false;
+    continuation.updatedAt = Date.now();
     if (typeof updateContinueCutoffButtonUi === 'function') {
       updateContinueCutoffButtonUi();
     }

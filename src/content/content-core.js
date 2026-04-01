@@ -58,6 +58,7 @@ const CONTINUE_ACK_PREFIX = '[TM_CONTINUE_ACK:';
 const CONTINUE_START_PREFIX = '[TM_CONTINUE_START:';
 const CONTINUE_END_PREFIX = '[TM_CONTINUE_END:';
 const CONTINUE_MARKER_SUFFIX = ']';
+const CONTINUE_FROM_CUTOFF_MAX_ERROR_RETRIES = 2;
 
 const DISCLAIMER_TEXT = '仅供学习参考，请勿违法使用';
 const PLACEHOLDER_TEXT = `请输入你的问题，${DISCLAIMER_TEXT}`;
@@ -73,12 +74,14 @@ const state = {
     sessionKey: '',
     anchorToken: '',
     tailText: '',
+    dispatching: false,
     toolCallInProgress: false,
     pendingToolCallToken: '',
     toolCallOpenTokens: [],
     toolCallTrackerSessionKey: '',
     updatedAt: 0,
-    chainCount: 0
+    chainCount: 0,
+    errorRetryCount: 0
   },
   pendingContinuationBySession: {},
   completedContinuationTokens: [],

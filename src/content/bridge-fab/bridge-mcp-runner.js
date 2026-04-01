@@ -69,12 +69,14 @@ function resetStreamContinuationState(options = {}) {
     sessionKey: '',
     anchorToken: '',
     tailText: '',
+    dispatching: false,
     toolCallInProgress: Boolean(pendingToolCallToken),
     pendingToolCallToken,
     toolCallOpenTokens,
     toolCallTrackerSessionKey: preserveToolCallState ? previousTrackerSessionKey : '',
     updatedAt: 0,
-    chainCount: 0
+    chainCount: 0,
+    errorRetryCount: 0
   };
   if (typeof updateContinueCutoffButtonUi === 'function') {
     updateContinueCutoffButtonUi();
@@ -86,10 +88,14 @@ function updateStreamContinuationStateFromPayload(payload) {
 
   const sessionKey = normalizeApiConversationKey(toSafeString(payload.sessionKey));
   if (!sessionKey) return;
+  const streamHasError = Boolean(toSafeString(payload.error))
+    || payload.receivedErrorEvent === true;
   const previousContinuation = state?.streamContinuation;
   const trackerSessionKey = normalizeApiConversationKey(
     toSafeString(previousContinuation?.toolCallTrackerSessionKey)
   );
+
+  if (streamHasError) return;
 
   if (payload.receivedDoneEvent === true) {
     const active = getActiveContinuationState();
@@ -127,12 +133,14 @@ function updateStreamContinuationStateFromPayload(payload) {
     sessionKey,
     anchorToken,
     tailText: compactTail,
+    dispatching: false,
     toolCallInProgress,
     pendingToolCallToken,
     toolCallOpenTokens,
     toolCallTrackerSessionKey: sessionKey,
     updatedAt: Date.now(),
-    chainCount
+    chainCount,
+    errorRetryCount: 0
   };
   if (typeof updateContinueCutoffButtonUi === 'function') {
     updateContinueCutoffButtonUi();
@@ -151,6 +159,7 @@ async function maybeAutoContinueFromCutoff(anchorToken = '') {
   const activeAnchorToken = toSafeString(active.anchorToken);
   const expectedToken = toSafeString(anchorToken) || activeAnchorToken;
   if (!activeAnchorToken || activeAnchorToken !== expectedToken) return false;
+  if (active.dispatching === true) return false;
   if (autoContinueFromCutoffInFlightAnchorToken === expectedToken) return false;
 
   autoContinueFromCutoffInFlightAnchorToken = expectedToken;
@@ -203,6 +212,49 @@ function buildContinueFromCutoffMessage() {
     tailText,
     '[TAIL_SNIPPET_END]'
   ].join('');
+}
+
+function handleContinuationDispatchError(payload) {
+  const sessionKey = normalizeApiConversationKey(toSafeString(payload?.sessionKey));
+  if (!sessionKey) return;
+
+  const continuation = state?.streamContinuation;
+  if (!continuation || typeof continuation !== 'object') return;
+
+  const activeSessionKey = normalizeApiConversationKey(toSafeString(continuation.sessionKey));
+  const trackerSessionKey = normalizeApiConversationKey(
+    toSafeString(continuation.toolCallTrackerSessionKey)
+  );
+  const trackedSessionKey = activeSessionKey || trackerSessionKey;
+  if (!trackedSessionKey || trackedSessionKey !== sessionKey) return;
+
+  continuation.dispatching = false;
+  continuation.updatedAt = Date.now();
+
+  const isContinuationRequest = payload?.isContinuationRequest === true;
+  const anchorToken = toSafeString(continuation.anchorToken);
+  if (continuation.active !== true || !anchorToken || !isContinuationRequest) {
+    if (typeof updateContinueCutoffButtonUi === 'function') {
+      updateContinueCutoffButtonUi();
+    }
+    return;
+  }
+
+  const retryCount = Number.isFinite(continuation.errorRetryCount)
+    ? Math.max(0, continuation.errorRetryCount)
+    : 0;
+  if (retryCount >= CONTINUE_FROM_CUTOFF_MAX_ERROR_RETRIES) {
+    if (typeof updateContinueCutoffButtonUi === 'function') {
+      updateContinueCutoffButtonUi();
+    }
+    return;
+  }
+
+  continuation.errorRetryCount = retryCount + 1;
+  if (typeof updateContinueCutoffButtonUi === 'function') {
+    updateContinueCutoffButtonUi();
+  }
+  void maybeAutoContinueFromCutoff(anchorToken);
 }
 
 function collectUnclosedToolCallTokens(text, { initialOpenTokens = [] } = {}) {
@@ -1489,6 +1541,10 @@ function onPageMessage(event) {
       resetStreamContinuationState();
     }
     state.streaming = true;
+    if (state.streamContinuation && typeof state.streamContinuation === 'object') {
+      state.streamContinuation.dispatching = false;
+      state.streamContinuation.updatedAt = Date.now();
+    }
     stopDomObserver();
     clearReconcileTimer();
     clearAutoExpandTimer();
@@ -1508,15 +1564,24 @@ function onPageMessage(event) {
       ? data.payload.assistantText
       : '';
     const streamHasDoneEvent = data.payload?.receivedDoneEvent === true;
+    const streamHasError = Boolean(toSafeString(data.payload?.error))
+      || data.payload?.receivedErrorEvent === true;
     const interruptedByToolCode = data.payload?.cutByToolCode === true;
     const shouldRenderAfterStreamDone = streamHasDoneEvent || interruptedByToolCode;
     state.streaming = false;
+    if (state.streamContinuation && typeof state.streamContinuation === 'object') {
+      state.streamContinuation.dispatching = false;
+      state.streamContinuation.updatedAt = Date.now();
+    }
     if (typeof updateContinueCutoffButtonUi === 'function') {
       updateContinueCutoffButtonUi();
     }
     if (isPluginEnabled) {
       finalizeSessionFromApiStream(data.payload);
       updateStreamContinuationStateFromPayload(data.payload);
+      if (streamHasError) {
+        handleContinuationDispatchError(data.payload);
+      }
       renderSessionSidebar();
       if (shouldRenderAfterStreamDone) {
         scheduleThinkingRender(false);
