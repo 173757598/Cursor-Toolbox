@@ -1053,6 +1053,45 @@ Use the SAME language as the user's latest message.
     return REWRITABLE_TOOL_STREAM_TYPES.has(type.toLowerCase());
   }
 
+  function extractStreamEventToolRef(eventData) {
+    if (!eventData || typeof eventData !== 'object') return '';
+    const directCandidates = [
+      eventData.toolName,
+      eventData.name,
+      eventData.tool_name,
+      eventData.tool
+    ];
+    for (const candidate of directCandidates) {
+      if (typeof candidate === 'string' && candidate.trim()) {
+        return candidate.trim();
+      }
+    }
+
+    const serverId = typeof eventData.serverId === 'string' ? eventData.serverId.trim() : '';
+    const toolName = typeof eventData.toolName === 'string' ? eventData.toolName.trim() : '';
+    if (serverId && toolName) {
+      return `${serverId}/${toolName}`;
+    }
+
+    return '';
+  }
+
+  function shouldRewriteToolStreamEvent(eventData) {
+    if (!eventData || typeof eventData !== 'object') return false;
+    if (!isRewritableToolStreamType(eventData.type)) return false;
+
+    const enabledToolRefs = normalizeMcpToolsForPrompt()
+      .map((tool) => `${tool.serverId}/${tool.name}`)
+      .filter(Boolean);
+    if (enabledToolRefs.length === 0) return false;
+
+    const eventToolRef = extractStreamEventToolRef(eventData);
+    if (!eventToolRef) return false;
+
+    return enabledToolRefs.includes(eventToolRef)
+      || enabledToolRefs.some((toolRef) => toolRef.endsWith(`/${eventToolRef}`));
+  }
+
   function buildToolRewriteSseBlocks(eventData, rewriteState) {
     if (!eventData || typeof eventData !== 'object') return [];
 
@@ -1091,7 +1130,7 @@ Use the SAME language as the user's latest message.
 
   function rewriteSseBlockForToolEvents(block, rewriteState) {
     const parsed = parseSseJsonPayloadFromBlock(block);
-    if (!parsed || !isRewritableToolStreamType(parsed.type)) {
+    if (!parsed || !shouldRewriteToolStreamEvent(parsed)) {
       return [String(block || '')];
     }
     return buildToolRewriteSseBlocks(parsed, rewriteState);

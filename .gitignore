@@ -12,3 +12,4 @@ web_mcp_cli/background.bundle.js.map
 *.log
 .DS_Store
 Thumbs.db
+.ace-tool/
